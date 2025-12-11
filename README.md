@@ -116,6 +116,4 @@ These are essential terminal commands for controlling the Node-RED service on yo
 | `node-red-log` | Displays the log output (useful for troubleshooting flow issues). |
 | `sudo systemctl enable nodered.service` | Configures Node-RED to start automatically when the Pi boots (if not enabled during initial install). |
 
------
 
-Would you like me to add a section on installing extra nodes (like the MQTT node) or provide guidance on setting up the GitHub repository structure (e.g., README vs. Wiki)?
