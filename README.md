@@ -116,4 +116,117 @@ These are essential terminal commands for controlling the Node-RED service on yo
 | `node-red-log` | Displays the log output (useful for troubleshooting flow issues). |
 | `sudo systemctl enable nodered.service` | Configures Node-RED to start automatically when the Pi boots (if not enabled during initial install). |
 
+That's great\! Integrating sections on MQTT, REST, and BLE will significantly enhance the practical value of this lab manual for students exploring IoT.
+
+I will add these three new sections (VII, VIII, IX) to the Markdown structure.
+
+
+## VII. Messaging with MQTT Broker
+
+MQTT (Message Queuing Telemetry Transport) is the backbone of many IoT systems. This exercise involves installing a local broker and setting up a basic publish/subscribe flow.
+
+### 1\. Installing the Mosquitto Broker
+
+The Mosquitto software will turn your Raspberry Pi into a local MQTT message broker.
+
+Open the terminal on the Raspberry Pi and run:
+
+```bash
+sudo apt update
+sudo apt install -y mosquitto mosquitto-clients
+```
+
+### 2\. Setting up the Service
+
+Enable and start the service so it runs automatically:
+
+```bash
+sudo systemctl enable mosquitto
+sudo systemctl start mosquitto
+```
+
+### 3\. Creating a Publish Flow (Client 1: Publisher)
+
+This flow simulates a sensor publishing data to the broker.
+
+| Step | Action | Node(s) Used | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | **Create Input** | **Inject** | Drag an **`inject`** node. Set the Payload to **`string`** and the value to **`TEMP: 25.5 C`**. |
+| 2 | **Add MQTT Output** | **mqtt out** | Drag an **`mqtt out`** node and connect the `inject` node to it. |
+| 3 | **Configure MQTT Node** | **mqtt out** | Double-click the `mqtt out` node. Click the pencil icon to add a new server connection. Set the **Server** to `localhost` and the **Port** to `1883`. Click **Add**. |
+| 4 | **Set Topic** | **mqtt out** | Back in the node configuration, set the **Topic** to: `sensors/pi/temperature`. Click **Done**. |
+| 5 | **Deploy** | (Deploy) | Click the **Deploy** button. |
+
+### 4\. Creating a Subscribe Flow (Client 2: Subscriber)
+
+This flow subscribes to the topic and displays any received messages.
+
+| Step | Action | Node(s) Used | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | **Add MQTT Input** | **mqtt in** | Drag an **`mqtt in`** node. |
+| 2 | **Configure MQTT Node** | **mqtt in** | Double-click and select the `localhost:1883` server connection you created earlier. |
+| 3 | **Set Topic** | **mqtt in** | Set the **Topic** to the exact same one used by the publisher: `sensors/pi/temperature`. Click **Done**. |
+| 4 | **Add Debug** | **Debug** | Connect the **`mqtt in`** node to a **`debug`** node. |
+| 5 | **Test** | **Inject** | Click **Deploy**. Then, click the `inject` button on the publisher flow. The message will travel `Inject` → `MQTT Out` → **Mosquitto Broker** → `MQTT In` → `Debug` and appear in the debug sidebar. |
+
+-----
+
+## VIII. Interacting with REST APIs
+
+Node-RED excels at interacting with web services using HTTP requests. This section shows how to retrieve external data.
+
+### 1\. Retrieving Data from an External API
+
+We will use a public API (like `jsonplaceholder.typicode.com`) to fetch a test user post.
+
+| Step | Action | Node(s) Used | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | **Create Trigger** | **Inject** | Drag an **`inject`** node. Set Payload to **`timestamp`** (default). |
+| 2 | **Add HTTP Request** | **http request** | Drag an **`http request`** node and connect the `inject` node to it. |
+| 3 | **Configure HTTP Request** | **http request** | Double-click the node. Set the **Method** to **`GET`**. Set the **URL** to: `https://jsonplaceholder.typicode.com/posts/1` |
+| 4 | **Set Output** | **http request** | Set the **Return** property to **`a parsed JSON object`**. Click **Done**. |
+| 5 | **Add Output** | **Debug** | Connect the **`http request`** node to a **`debug`** node. |
+| 6 | **Test** | **Inject** | Click **Deploy**. Click the `inject` button. The debug sidebar should show the received JSON object, including `msg.payload.title` and `msg.payload.body`. |
+
+### 2\. Displaying Parsed Data
+
+To make the output cleaner, use a `function` node to extract just the title.
+
+1.  Place a **`function`** node between the `http request` and `debug` nodes.
+2.  In the `function` node, enter the following code:
+    ```javascript
+    // Extract the title from the JSON payload
+    msg.payload = "Post Title: " + msg.payload.title;
+    return msg;
+    ```
+3.  **Deploy and Test:** Click the `inject` button again. The debug output will now only show the formatted title.
+
+-----
+
+## IX. Basic BLE Interaction (Optional: Hardware Dependent)
+
+Interacting with Bluetooth Low Energy (BLE) requires the correct hardware (most Raspberry Pi models have built-in BLE) and the installation of specific Node-RED nodes.
+
+### 1\. Install BLE Nodes
+
+Open the terminal on the Raspberry Pi and run:
+
+```bash
+cd ~/.node-red
+npm install node-red-contrib-noble-bluetooth
+# Or use the Node-RED Palette Manager (Menu -> Manage Palette -> Install)
+```
+
+### 2\. Example: Scanning for BLE Devices
+
+This flow continuously scans for nearby BLE peripherals and outputs their names and identifiers.
+
+| Step | Action | Node(s) Used | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | **Create Trigger** | **Inject** | Drag an **`inject`** node. Set it to **repeat** every 10 seconds. |
+| 2 | **Add BLE Scanner** | **ble scan** | Drag a **`ble scan`** node and connect the `inject` node to it. |
+| 3 | **Configure Scanner** | **ble scan** | Double-click the node. Ensure **Start** is selected as the operation. Set a reasonable **Duration** (e.g., 5 seconds). Click **Done**. |
+| 4 | **Add Debug** | **Debug** | Connect the output of the **`ble scan`** node to a **`debug`** node. |
+| 5 | **Test** | **Inject** | Click **Deploy**. The `ble scan` node will output an array of nearby devices to the debug sidebar whenever triggered. (Ensure Bluetooth is enabled on the Pi). |
+
 
